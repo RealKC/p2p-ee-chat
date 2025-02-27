@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "pnpm run --recursive --parallel dev",
+    "build": "pnpm run --recursive --parallel build",
+    "test": "pnpm run --recursive --parallel test",
+    "format": "biome format --write .",
+    "check": "biome check ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4"
+  }
+}

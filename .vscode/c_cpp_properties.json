@@ -1,0 +1,23 @@
+{
+  "configurations": [
+    {
+      "name": "Linux",
+      "includePath": ["${workspaceFolder}/**"],
+      "defines": [],
+      "compilerPath": "/usr/bin/clang",
+      "intelliSenseMode": "linux-clang-x64"
+    },
+    {
+      "name": "Emscripten",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "/usr/lib/emscripten/system/include"
+      ],
+      "defines": ["__EMSCRIPTEN__"],
+      "cStandard": "c23",
+      "cppStandard": "c++23",
+      "intelliSenseMode": "${default}"
+    }
+  ],
+  "version": 4
+}

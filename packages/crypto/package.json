@@ -1,0 +1,14 @@
+{
+  "name": "@csd/crypto",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "exports": "./crypto.ts",
+  "devDependencies": {
+    "typescript": "^5.1.6"
+  }
+}

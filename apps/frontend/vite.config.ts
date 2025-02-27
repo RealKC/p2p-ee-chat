@@ -1,5 +1,5 @@
 import { vitePlugin as remix } from "@remix-run/dev";
-import { defineConfig } from "vite";
+import { defineConfig, searchForWorkspaceRoot } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 declare module "@remix-run/node" {
@@ -9,6 +9,20 @@ declare module "@remix-run/node" {
 }
 
 export default defineConfig({
+  server: {
+    fs: {
+      allow: [
+        searchForWorkspaceRoot(process.cwd()),
+        "../crypto/build-wasm/crypto.wasm",
+      ],
+    },
+  },
+  build: {
+    target: "esnext",
+    rollupOptions: {
+      external: ["@csd/crypto"],
+    },
+  },
   plugins: [
     remix({
       future: {

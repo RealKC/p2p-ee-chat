@@ -1,9 +1,10 @@
-import type {MetaFunction} from "@remix-run/node";
+import type { MetaFunction } from "@remix-run/node";
+import { Aaa } from "~/test";
 
 export const meta: MetaFunction = () => {
   return [
-    {title: "New Remix App"},
-    {name: "description", content: "Welcome to Remix!"},
+    { title: "New Remix App" },
+    { name: "description", content: "Welcome to Remix!" },
   ];
 };
 
@@ -14,6 +15,7 @@ export default function Index() {
         <header className="flex flex-col items-center gap-9">
           <h1 className="leading text-2xl font-bold text-gray-800 dark:text-gray-100">
             Welcome to <span className="sr-only">Remix</span>
+            <Aaa />
           </h1>
           <div className="h-[144px] w-[434px]">
             <img
@@ -33,7 +35,7 @@ export default function Index() {
             What&apos;s next?
           </p>
           <ul>
-            {resources.map(({href, text, icon}) => (
+            {resources.map(({ href, text, icon }) => (
               <li key={href}>
                 <a
                   className="group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500"
