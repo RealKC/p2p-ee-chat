@@ -2,7 +2,8 @@
   "name": "@csd/crypto",
   "version": "1.0.0",
   "scripts": {
-    "build": "tsc"
+    "configure": "emcmake cmake -S . -B build-wasm",
+    "build": "cmake --build build-wasm"
   },
   "author": "",
   "license": "ISC",

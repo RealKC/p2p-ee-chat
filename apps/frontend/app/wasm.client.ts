@@ -1,1 +1,1 @@
-export * from "@csd/crypto";
+export { add } from "@csd/crypto";
