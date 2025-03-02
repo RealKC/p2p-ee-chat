@@ -10,7 +10,7 @@
     "test": "pnpm configure-tests && pnpm build-tests && pnpm run-tests"
   },
   "author": "",
-  "license": "ISC",
+  "license": "EUPL-1.2",
   "description": "",
   "exports": "./crypto.ts",
   "devDependencies": {
