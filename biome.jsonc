@@ -4,7 +4,7 @@
     "enabled": true
   },
   "files": {
-    "ignore": ["build-wasm/**", "build/**"]
+    "ignore": ["build-wasm/**", "build/**", "build-tests/**"]
   },
   "formatter": {
     "enabled": true,
