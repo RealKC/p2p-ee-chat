@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.31)
 project(CryptoLib)
 
-add_executable(crypto-lib demo.cpp)
+add_executable(crypto-lib
+    common.hpp
+    demo.cpp)
 set_target_properties(crypto-lib PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
 
 target_link_options(

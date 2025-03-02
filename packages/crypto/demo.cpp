@@ -1,7 +1,4 @@
-#ifdef __EMSCRIPTEN__
-#include <emscripten/bind.h>
-#include <emscripten/emscripten.h>
-#endif
+#include "common.hpp"
 
 float add(float a, float b)
 {
