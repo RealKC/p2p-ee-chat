@@ -6,7 +6,8 @@
     "build": "cmake --build build-wasm",
     "configure-tests": "cmake -S . -B build-tests",
     "build-tests": "cmake --build build-tests",
-    "run-tests": "cd build-tests && ctest --output-on-failure"
+    "run-tests": "cd build-tests && ctest --output-on-failure",
+    "test": "pnpm configure-tests && pnpm build-tests && pnpm run-tests"
   },
   "author": "",
   "license": "ISC",
