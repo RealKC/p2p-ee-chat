@@ -6,7 +6,7 @@ float add(float a, float b)
 }
 
 #if IS_WASM
-EMSCRIPTEN_BINDINGS(CryptoLib)
+EMSCRIPTEN_BINDINGS(DemoCpp)
 {
     using namespace emscripten;
 
