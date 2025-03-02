@@ -5,11 +5,20 @@ float add(float a, float b)
     return a + b;
 }
 
-#ifdef IS_WASM
+#if IS_WASM
 EMSCRIPTEN_BINDINGS(CryptoLib)
 {
     using namespace emscripten;
 
     function("add", &add);
 }
+#endif
+
+#if IS_TESTING
+
+TEST_CASE("addition works as expected")
+{
+    REQUIRE(add(2, 3) == 5);
+}
+
 #endif

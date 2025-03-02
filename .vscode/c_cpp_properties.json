@@ -13,7 +13,7 @@
         "${workspaceFolder}/**",
         "/usr/lib/emscripten/system/include"
       ],
-      "defines": ["__EMSCRIPTEN__"],
+      "defines": ["__EMSCRIPTEN__", "IS_TESTING"],
       "cStandard": "c23",
       "cppStandard": "c++23",
       "intelliSenseMode": "${default}"

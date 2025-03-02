@@ -7,3 +7,7 @@
 #else
 #    define IS_WASM 0
 #endif
+
+#if IS_TESTING
+#    include <catch2/catch_test_macros.hpp>
+#endif

@@ -1,3 +1,4 @@
 build-wasm/
 build-native/
+build-tests
 node_modules/

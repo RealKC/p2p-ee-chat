@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "scripts": {
     "configure": "emcmake cmake -S . -B build-wasm",
-    "build": "cmake --build build-wasm"
+    "build": "cmake --build build-wasm",
+    "configure-tests": "cmake -S . -B build-tests",
+    "build-tests": "cmake --build build-tests",
+    "run-tests": "cd build-tests && ctest --output-on-failure"
   },
   "author": "",
   "license": "ISC",
