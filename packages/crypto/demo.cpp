@@ -5,7 +5,7 @@ float add(float a, float b)
     return a + b;
 }
 
-#ifdef __EMSCRIPTEN__
+#ifdef IS_WASM
 EMSCRIPTEN_BINDINGS(CryptoLib)
 {
     using namespace emscripten;
