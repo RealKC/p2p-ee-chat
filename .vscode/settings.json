@@ -26,5 +26,8 @@
     "editor.suggest.insertMode": "insert",
     "editor.defaultFormatter": "ms-vscode.cpptools",
     "editor.formatOnSave": true
+  },
+  "editor.codeActionsOnSave": {
+    "source.organizeImports.biome": "explicit"
   }
 }
