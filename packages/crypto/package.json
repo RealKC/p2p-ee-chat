@@ -7,7 +7,9 @@
     "configure-tests": "cmake -S . -B build-tests",
     "build-tests": "cmake --build build-tests",
     "run-tests": "cd build-tests && ctest --output-on-failure",
-    "test": "pnpm configure-tests && pnpm build-tests && pnpm run-tests"
+    "test": "pnpm configure-tests && pnpm build-tests && pnpm run-tests",
+    "check-wasm": "clang-tidy -p build-wasm *.cpp *.hpp",
+    "check-tests": "clang-tidy -p build-tests *.cpp *.hpp"
   },
   "author": "",
   "license": "EUPL-1.2",

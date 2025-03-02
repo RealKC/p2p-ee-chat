@@ -1,6 +1,6 @@
 #include "common.hpp"
 
-float add(float a, float b)
+static float add(float a, float b)
 {
     return a + b;
 }

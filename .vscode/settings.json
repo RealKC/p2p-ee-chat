@@ -29,5 +29,6 @@
   },
   "editor.codeActionsOnSave": {
     "source.organizeImports.biome": "explicit"
-  }
+  },
+  "C_Cpp.codeAnalysis.clangTidy.enabled": true
 }
