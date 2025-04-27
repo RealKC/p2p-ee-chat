@@ -5,7 +5,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(crypto-lib
     common.hpp
-    demo.cpp)
+    demo.cpp
+    KeyExchange.cpp
+    KeyExchange.hpp)
 
 if(NOT EMSCRIPTEN)
     Include(FetchContent)
@@ -35,6 +37,7 @@ if(EMSCRIPTEN)
         PRIVATE
         "SHELL:-sENVIRONMENT='web'"
         -sEXPORT_ES6
+        -sUSE_BOOST_HEADERS=1
         -sEXPORT_NAME=CryptoLib
         -sINVOKE_RUN=0
 
@@ -52,4 +55,7 @@ if(EMSCRIPTEN)
         $<$<CONFIG:DEBUG>:-fwasm-exceptions>
         $<$<CONFIG:DEBUG>:-g>
         $<$<CONFIG:DEBUG>:-O0>)
+else()
+    find_package(Boost REQUIRED COMPONENTS random)
+    target_link_libraries(crypto-lib PRIVATE Boost::random)
 endif()
