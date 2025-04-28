@@ -13,5 +13,5 @@ struct PublicParams {
 
 u2048 generate_private_key();
 
-u2048 compute_public_key(u2048 private_key);
-u2048 compute_common_secret(u2048 public_key, u2048 private_key);
+u2048 compute_public_key(u2048 const& private_key);
+u2048 compute_common_secret(u2048 const& public_key, u2048 const& private_key);

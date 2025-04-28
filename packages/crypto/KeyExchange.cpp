@@ -2,7 +2,6 @@
 
 #include "common.hpp"
 #include <array>
-#include <boost/multiprecision/miller_rabin.hpp>
 #include <boost/random.hpp>
 #include <cstdint>
 #include <stdexcept>
@@ -60,27 +59,17 @@ u2048 generate_private_key()
 {
     mt11213b base_gen(clock());
     independent_bits_engine<mt11213b, 2048, u2048> generator(base_gen);
-    boost::random::uniform_int_distribution<u2048> dist(u2048(0), public_params.modulus - 1);
+    boost::random::uniform_int_distribution<u2048> dist(u2048(1), public_params.modulus - 1);
 
-    mt19937 test_gen(clock());
-
-    for (int i = 0; i < 10'000; ++i) {
-        auto candidate = dist(generator);
-
-        if (miller_rabin_test(candidate, 25, test_gen)) {
-            return candidate;
-        }
-    }
-
-    throw std::runtime_error("failed to generate private key");
+    return dist(generator);
 }
 
-u2048 compute_public_key(u2048 private_key)
+u2048 compute_public_key(u2048 const& private_key)
 {
     return powm(public_params.base, private_key, public_params.modulus);
 }
 
-u2048 compute_common_secret(u2048 public_key, u2048 private_key)
+u2048 compute_common_secret(u2048 const& public_key, u2048 const& private_key)
 {
     return powm(public_key, private_key, public_params.modulus);
 }
