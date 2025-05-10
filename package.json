@@ -5,9 +5,11 @@
     "build": "pnpm run --recursive --parallel build",
     "test": "pnpm run --recursive --parallel test",
     "format": "biome format --write .",
-    "check": "biome check ."
+    "check": "biome check .",
+    "signaling": "dotenvx run -- cargo run --package signaling-server"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4"
+    "@biomejs/biome": "^1.9.4",
+    "@dotenvx/dotenvx": "^1.43.0"
   }
 }

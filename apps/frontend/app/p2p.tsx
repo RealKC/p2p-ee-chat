@@ -120,9 +120,9 @@ export function useP2P() {
 
 export function P2PProvider(props: PropsWithChildren) {
   const fetchIceServers = async () => {
-    const response = await fetch(
-      "https://dumitruac.metered.live/api/v1/turn/credentials?apiKey=7b23492029e22bd7b36e60981b32e39a51e9",
-    );
+    const response = await fetch("http://localhost:8080/ice", {
+      method: "GET",
+    });
 
     return await response.json();
   };

@@ -1,8 +1,14 @@
+mod ice;
 mod ws;
 
 use std::{env, net::SocketAddr, sync::Arc};
 
-use axum::{Router, routing::any};
+use axum::{
+    Router,
+    http::{HeaderValue, Method},
+    routing::{any, get},
+};
+use tower_http::cors::CorsLayer;
 use ws::Channels;
 
 #[tokio::main]
@@ -17,6 +23,12 @@ async fn main() {
 
     let app = Router::new()
         .route("/ws", any(ws::handle_connection))
+        .route("/ice", get(ice::get))
+        .layer(
+            CorsLayer::new()
+                .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
+                .allow_methods([Method::GET]),
+        )
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
