@@ -3,7 +3,12 @@
 #include "common.hpp"
 #include <bit>
 #include <cstdint>
+#include <stdexcept>
 #include <stdint.h>
+
+// NOLINTBEGIN(readability-isolate-declaration): The code is readable as is
+// NOLINTBEGIN(readability-math-missing-parentheses): It's pretty clear what the intended precedence is where this lint fires
+// NOLINTBEGIN(bugprone-implicit-widening-of-multiplication-result)
 
 using namespace std;
 
@@ -75,7 +80,7 @@ uint8_t const t_q1[] = {
 /// @param b unsigned 8 bit value to do the mul
 /// @param poly the polynomial used of degree 8 over GF(2)
 /// @return unsigned 8 bit value, the result of the multiplication of "a" and "b" over the polynom
-uint8_t galois_mul(uint8_t a, uint8_t b, uint8_t poly)
+static uint8_t galois_mul(uint8_t a, uint8_t b, uint8_t poly)
 {
     uint8_t result = 0;
     while (a > 0) {
@@ -96,7 +101,7 @@ uint8_t galois_mul(uint8_t a, uint8_t b, uint8_t poly)
 /// @brief this is a fixed permutation where there are used rotations and XOR's and then the value is passed through an fixed S-box
 /// @param x unsigned 8 bit value
 /// @return 8 unsigned bit value
-uint8_t permutation_q0(uint8_t x)
+static uint8_t permutation_q0(uint8_t x)
 {
     uint8_t a0 = x / 16;
     uint8_t b0 = x % 16;
@@ -119,7 +124,7 @@ uint8_t permutation_q0(uint8_t x)
 /// @brief this is a fixed permutation where there are used rotations and XOR's and then the value is passed through an fixed S-box
 /// @param x unsigned 8 bit value
 /// @return 8 unsigned bit value
-uint8_t permutation_q1(uint8_t x)
+static uint8_t permutation_q1(uint8_t x)
 {
     uint8_t a0 = x / 16;
     uint8_t b0 = x % 16;
@@ -142,7 +147,7 @@ uint8_t permutation_q1(uint8_t x)
 #define PACK(a, b, c, d) (d << 24 | c << 16 | b << 8 | a)
 
 // the multiplication between a value and the matrix MDS
-uint32_t mds_column_mul(uint8_t x, int column)
+static uint32_t mds_column_mul(uint8_t x, int column)
 {
     auto x5b = galois_mul(0x5b, x, MDS_MUL);
     auto xef = galois_mul(0xef, x, MDS_MUL);
@@ -156,6 +161,8 @@ uint32_t mds_column_mul(uint8_t x, int column)
         return PACK(x5b, xef, x, xef);
     case 3:
         return PACK(x5b, x, xef, x5b);
+    default:
+        throw std::runtime_error("Invalid column in mds_column_mul");
     }
 }
 
@@ -165,7 +172,7 @@ uint32_t mds_column_mul(uint8_t x, int column)
 /// @param k int value used for the dimension of the key || k = 2 - 128b key || k = 3 - 192b value || k = 4 - 256b key
 /// @param offset for Me is 0 and for Mo is 1
 /// @return unsigned 32 bit value
-uint32_t h(uint32_t X, uint8_t* L, int k, int offset)
+static uint32_t h(uint32_t X, uint8_t const* L, int k, int offset)
 {
     uint8_t y[] = { byte0(X), byte1(X), byte2(X), byte3(X) };
 
@@ -196,7 +203,7 @@ uint32_t h(uint32_t X, uint8_t* L, int k, int offset)
 /// @brief the keys are generated here and then used in the algorithm for whitening and the 16 rounds
 /// @param X pointer to an list of unsigned 32 bit values - the whole key given by the user
 /// @param k pointer to an list of unsigned 32 bit values - the values are stored here, this is the return
-void generation_subkeys(uint32_t X[8], uint32_t k[40])
+static void generation_subkeys(uint32_t X[8], uint32_t k[40])
 {
     uint32_t Ai, Bi; // k ii 2 pt 128b, 4 256b
     uint32_t ro = 0x1010101;
@@ -216,7 +223,7 @@ void generation_subkeys(uint32_t X[8], uint32_t k[40])
 /// @brief the keys generated are used in g function
 /// @param key a list of unsigned 8 bit - the whole key given by the user
 /// @param S a list of unsigned 32 bit value with 4 elements
-void key_schedule(uint8_t key[32], uint32_t S[4])
+static void key_schedule(uint8_t const key[32], uint32_t S[4])
 {
     for (int i = 0; i < 4; ++i) {
         uint8_t s[4] = { 0 };
@@ -235,7 +242,7 @@ void key_schedule(uint8_t key[32], uint32_t S[4])
 /// @param L list of unsigned 8 bit with 16 values - the list of the subkeys S0, S1
 /// @param k the value based on the size of the key || k = 2 - 128b key || k = 3 - 192b value || k = 4 - 256b key
 /// @return unsigned 32 bit value
-uint32_t g(uint32_t X, uint8_t L[16], int k)
+static uint32_t g(uint32_t X, uint8_t const L[16], int k)
 {
     uint8_t y[] = { byte0(X), byte1(X), byte2(X), byte3(X) };
 
@@ -266,7 +273,7 @@ uint32_t g(uint32_t X, uint8_t L[16], int k)
 /// @param S list of unsigned 32 bit with 4 values - the S0 and S1 keys from the key_schedule
 /// @param k list of unsigned 32 bit with 2 values - the specific round key from the generation_subkeys
 /// @param F list of unsigned 32 bit with 2 values - the return of each round
-void F(uint32_t R[2], uint32_t S[4], uint32_t k[2], uint32_t F[2])
+static void F(uint32_t R[2], uint32_t S[4], uint32_t const k[2], uint32_t F[2])
 {
     uint32_t T0, T1;
 
@@ -279,7 +286,7 @@ void F(uint32_t R[2], uint32_t S[4], uint32_t k[2], uint32_t F[2])
 }
 
 namespace twofish {
-void block_encryption(uint32_t plaintext[4], uint32_t key[8], uint32_t cipher[4])
+void block_encryption(uint32_t plaintext[4], uint32_t const key[8], uint32_t cipher[4])
 {
     uint32_t k[40];
     uint32_t temp[8];
@@ -338,7 +345,7 @@ void block_encryption(uint32_t plaintext[4], uint32_t key[8], uint32_t cipher[4]
     }
 }
 
-void block_decryption(uint32_t plaintext[4], uint32_t key[8], uint32_t cipher[4])
+void block_decryption(uint32_t plaintext[4], uint32_t const key[8], uint32_t const  cipher[4])
 {
     uint32_t k[40], temp[8];
     uint32_t S[4], tempa[4];
@@ -395,7 +402,11 @@ void block_decryption(uint32_t plaintext[4], uint32_t key[8], uint32_t cipher[4]
 }
 }
 
-#if 0
+// NOLINTEND(bugprone-implicit-widening-of-multiplication-result)
+// NOLINTEND(readability-math-missing-parentheses)
+// NOLINTEND(readability-isolate-declaration)
+
+#if 0 // NOLINT(readability-avoid-unconditional-preprocessor-if)
 int main()
 {
     uint32_t Key[8] = { 0xD43BB755, 0x6EA32E46, 0xF2A282B7, 0xD45B4E0D, 0x57FF739D, 0x4DC92C1B, 0xD7FC0170, 0x0CC8216F};
