@@ -130,7 +130,7 @@ export function P2PProvider(props: PropsWithChildren) {
   function InnerElemens() {
     const iceServers = useAsyncValue() as RTCIceServer[];
 
-    const { sendMessage, lastMessage } = useWebSocket("ws://localhost:8080");
+    const { sendMessage, lastMessage } = useWebSocket("ws://localhost:8080/ws");
 
     const [userId, setUserId] = useState<string | undefined>();
 
