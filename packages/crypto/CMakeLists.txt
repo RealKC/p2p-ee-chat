@@ -32,6 +32,7 @@ endif()
 set_target_properties(crypto-lib PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
 
 if(EMSCRIPTEN)
+    target_compile_options(crypto-lib PRIVATE -sUSE_BOOST_HEADERS=1)
     target_link_options(
         crypto-lib
         PRIVATE
