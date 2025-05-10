@@ -43,7 +43,9 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: "pnpm"
       - name: Install dependencies
-        run: pnpm install
+        run: |
+          pnpm install
+          sudo apt install -y libboost-all-dev
       - name: Lint tests
         working-directory: packages/crypto
         run: |
