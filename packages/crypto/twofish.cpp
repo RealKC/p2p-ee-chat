@@ -1,8 +1,9 @@
+#include "twofish.hpp"
+
+#include "common.hpp"
 #include <bit>
 #include <cstdint>
 #include <stdint.h>
-
-#include "common.hpp"
 
 using namespace std;
 
@@ -277,11 +278,8 @@ void F(uint32_t R[2], uint32_t S[4], uint32_t k[2], uint32_t F[2])
     F[1] = T0 + 2 * T1 + k[1];
 }
 
-/// @brief the function to call to encrypt a specific plaintext, with a 256b key given by the user using Twofish
-/// @param plaintext list of unsigned 32 bit with 4 values - the text the user wants to encrypt / the input
-/// @param Key list of unsigned 32 bit with 8 values - the whole key given by the user to encrypt the plaintext / the key has to be 256b
-/// @param cipher list of unsigned 32 bit with 4 values - the return of the Twofish algorithm based on the plaintext and the key
-void block_encryption(uint32_t plaintext[4], uint32_t Key[8], uint32_t cipher[4])
+namespace twofish {
+void block_encryption(uint32_t plaintext[4], uint32_t key[8], uint32_t cipher[4])
 {
     uint32_t k[40];
     uint32_t temp[8];
@@ -295,7 +293,7 @@ void block_encryption(uint32_t plaintext[4], uint32_t Key[8], uint32_t cipher[4]
     }
 
     for (size_t i = 0; i < 8; ++i) {
-        temp[i] = z3(byte0(Key[i])) | z2(byte1(Key[i])) | z1(byte2(Key[i])) | z0(byte3(Key[i]));
+        temp[i] = z3(byte0(key[i])) | z2(byte1(key[i])) | z1(byte2(key[i])) | z0(byte3(key[i]));
     }
 
     generation_subkeys(temp, k);
@@ -340,11 +338,7 @@ void block_encryption(uint32_t plaintext[4], uint32_t Key[8], uint32_t cipher[4]
     }
 }
 
-/// @brief the function to call to decrypt the cipher and get the plaintext, with a 256b key given by the user using Twofish
-/// @param plaintext list of unsigned 32 bit with 4 values
-/// @param Key list of unsigned 32 bit with 8 values
-/// @param cipher list of unsigned 32 bit with 4 values
-void block_decryption(uint32_t plaintext[4], uint32_t Key[8], uint32_t cipher[4])
+void block_decryption(uint32_t plaintext[4], uint32_t key[8], uint32_t cipher[4])
 {
     uint32_t k[40], temp[8];
     uint32_t S[4], tempa[4];
@@ -352,7 +346,7 @@ void block_decryption(uint32_t plaintext[4], uint32_t Key[8], uint32_t cipher[4]
     uint32_t R0, R1, R2, R3, R10, R11, R12, R13;
 
     for (int i = 0; i < 8; ++i) {
-        temp[i] = z3(byte0(Key[i])) | z2(byte1(Key[i])) | z1(byte2(Key[i])) | z0(byte3(Key[i]));
+        temp[i] = z3(byte0(key[i])) | z2(byte1(key[i])) | z1(byte2(key[i])) | z0(byte3(key[i]));
     }
 
     generation_subkeys(temp, k);
@@ -399,6 +393,7 @@ void block_decryption(uint32_t plaintext[4], uint32_t Key[8], uint32_t cipher[4]
     plaintext[2] = R2;
     plaintext[3] = R3;
 }
+}
 
 #if 0
 int main()
@@ -438,11 +433,11 @@ TEST_CASE("I=1/pg67")
     uint32_t cipher[4];
     uint32_t cipher_test[] = { 0x57FF739D, 0x4DC92C1B, 0xD7FC0170, 0x0CC8216F };
 
-    block_encryption(plaintext_initial, key, cipher);
+    twofish::block_encryption(plaintext_initial, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(cipher[i] == cipher_test[i]);
     }
-    block_decryption(plaintext_final, key, cipher);
+    twofish::block_decryption(plaintext_final, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(plaintext_initial[i] == plaintext_final[i]);
     }
@@ -456,11 +451,11 @@ TEST_CASE("I=2/pg67")
     uint32_t cipher[4];
     uint32_t cipher_test[4] = { 0xD43BB755, 0x6EA32E46, 0xF2A282B7, 0xD45B4E0D };
 
-    block_encryption(plaintext_initial, key, cipher);
+    twofish::block_encryption(plaintext_initial, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(cipher[i] == cipher_test[i]);
     }
-    block_decryption(plaintext_final, key, cipher);
+    twofish::block_decryption(plaintext_final, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(plaintext_initial[i] == plaintext_final[i]);
     }
@@ -474,11 +469,11 @@ TEST_CASE("I=3/pg67")
     uint32_t cipher[4];
     uint32_t cipher_test[4] = { 0x90AFE91B, 0xB288544F, 0x2C32DC23, 0x9B2635E6 };
 
-    block_encryption(plaintext_initial, key, cipher);
+    twofish::block_encryption(plaintext_initial, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(cipher[i] == cipher_test[i]);
     }
-    block_decryption(plaintext_final, key, cipher);
+    twofish::block_decryption(plaintext_final, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(plaintext_initial[i] == plaintext_final[i]);
     }
@@ -491,11 +486,11 @@ TEST_CASE("I=4/pg67")
     uint32_t plaintext_final[4];
     uint32_t cipher[4];
     uint32_t cipher_test[4] = { 0x6CB4561C, 0x40BF0A97, 0x05931CB6, 0xD408E7FA };
-    block_encryption(plaintext_initial, key, cipher);
+    twofish::block_encryption(plaintext_initial, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(cipher[i] == cipher_test[i]);
     }
-    block_decryption(plaintext_final, key, cipher);
+    twofish::block_decryption(plaintext_final, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(plaintext_initial[i] == plaintext_final[i]);
     }
@@ -509,11 +504,11 @@ TEST_CASE("I=5/pg67")
     uint32_t cipher[4];
     uint32_t cipher_test[4] = { 0x3059D6D6, 0x1753B958, 0xD92F4781, 0xC8640E58 };
 
-    block_encryption(plaintext_initial, key, cipher);
+    twofish::block_encryption(plaintext_initial, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(cipher[i] == cipher_test[i]);
     }
-    block_decryption(plaintext_final, key, cipher);
+    twofish::block_decryption(plaintext_final, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(plaintext_initial[i] == plaintext_final[i]);
     }
