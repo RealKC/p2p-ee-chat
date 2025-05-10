@@ -66,7 +66,12 @@ export function useP2P() {
     try {
       const connection = createConnection(peerId);
 
-      const dataChannel = connection.createDataChannel(`${username}-${peerId}`);
+      const dataChannel = connection.createDataChannel(
+        `${username}-${peerId}`,
+        {
+          ordered: true,
+        },
+      );
       function onDataChannelStatusChange(_event: Event) {
         console.log(`status change: ${dataChannel!.readyState}`);
       }
