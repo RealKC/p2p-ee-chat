@@ -8,7 +8,8 @@ add_executable(crypto-lib
     demo.cpp
     KeyExchange.cpp
     KeyExchange.hpp
-    twofish.cpp)
+    twofish.cpp
+    twofish.hpp)
 
 if(NOT EMSCRIPTEN)
     Include(FetchContent)

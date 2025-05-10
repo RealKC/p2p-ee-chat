@@ -2,15 +2,11 @@
 
 #include "common.hpp"
 #include <bit>
-#include <cstdint>
 #include <stdexcept>
-#include <stdint.h>
 
 // NOLINTBEGIN(readability-isolate-declaration): The code is readable as is
 // NOLINTBEGIN(readability-math-missing-parentheses): It's pretty clear what the intended precedence is where this lint fires
 // NOLINTBEGIN(bugprone-implicit-widening-of-multiplication-result)
-
-using namespace std;
 
 #define ROR4(x) ((x >> 1) | ((x << 3) & 0xf))
 
@@ -212,11 +208,11 @@ static void generation_subkeys(uint32_t X[8], uint32_t k[40])
         Ai = h(2 * index * ro, (uint8_t*)X, 4, 0);
         Bi = h((2 * index + 1) * ro, (uint8_t*)X, 4, 1);
 
-        Bi = rotl(Bi, 8);
+        Bi = std::rotl(Bi, 8);
 
         k[2 * index] = Ai + Bi;
 
-        k[2 * index + 1] = rotl(Ai + 2 * Bi, 9);
+        k[2 * index + 1] = std::rotl(Ai + 2 * Bi, 9);
     }
 }
 
@@ -279,14 +275,14 @@ static void F(uint32_t R[2], uint32_t S[4], uint32_t const k[2], uint32_t F[2])
 
     T0 = g(R[0], (uint8_t*)S, 4);
 
-    T1 = g(rotl(R[1], 8), (uint8_t*)S, 4);
+    T1 = g(std::rotl(R[1], 8), (uint8_t*)S, 4);
 
     F[0] = T0 + T1 + k[0];
     F[1] = T0 + 2 * T1 + k[1];
 }
 
 namespace twofish {
-void block_encryption(uint32_t plaintext[4], uint32_t const key[8], uint32_t cipher[4])
+void encrypt_block(std::uint32_t plaintext[4], std::uint32_t const key[8], std::uint32_t cipher[4])
 {
     uint32_t k[40];
     uint32_t temp[8];
@@ -323,11 +319,11 @@ void block_encryption(uint32_t plaintext[4], uint32_t const key[8], uint32_t cip
 
         F(R, tempa, &k[2 * index + 8], Fr);
         if (index == 0) {
-            R10 = rotr(R2 ^ Fr[0], 1);
-            R11 = rotl(R3, 1) ^ Fr[1];
+            R10 = std::rotr(R2 ^ Fr[0], 1);
+            R11 = std::rotl(R3, 1) ^ Fr[1];
         } else {
-            R10 = rotr(R12 ^ Fr[0], 1);
-            R11 = rotl(R13, 1) ^ Fr[1];
+            R10 = std::rotr(R12 ^ Fr[0], 1);
+            R11 = std::rotl(R13, 1) ^ Fr[1];
         }
         R12 = R0;
         R13 = R1;
@@ -345,7 +341,7 @@ void block_encryption(uint32_t plaintext[4], uint32_t const key[8], uint32_t cip
     }
 }
 
-void block_decryption(uint32_t plaintext[4], uint32_t const key[8], uint32_t const  cipher[4])
+void decrypt_block(std::uint32_t plaintext[4], std::uint32_t const key[8], std::uint32_t const cipher[4])
 {
     uint32_t k[40], temp[8];
     uint32_t S[4], tempa[4];
@@ -444,11 +440,11 @@ TEST_CASE("I=1/pg67")
     uint32_t cipher[4];
     uint32_t cipher_test[] = { 0x57FF739D, 0x4DC92C1B, 0xD7FC0170, 0x0CC8216F };
 
-    twofish::block_encryption(plaintext_initial, key, cipher);
+    twofish::encrypt_block(plaintext_initial, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(cipher[i] == cipher_test[i]);
     }
-    twofish::block_decryption(plaintext_final, key, cipher);
+    twofish::decrypt_block(plaintext_final, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(plaintext_initial[i] == plaintext_final[i]);
     }
@@ -462,11 +458,11 @@ TEST_CASE("I=2/pg67")
     uint32_t cipher[4];
     uint32_t cipher_test[4] = { 0xD43BB755, 0x6EA32E46, 0xF2A282B7, 0xD45B4E0D };
 
-    twofish::block_encryption(plaintext_initial, key, cipher);
+    twofish::encrypt_block(plaintext_initial, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(cipher[i] == cipher_test[i]);
     }
-    twofish::block_decryption(plaintext_final, key, cipher);
+    twofish::decrypt_block(plaintext_final, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(plaintext_initial[i] == plaintext_final[i]);
     }
@@ -480,11 +476,11 @@ TEST_CASE("I=3/pg67")
     uint32_t cipher[4];
     uint32_t cipher_test[4] = { 0x90AFE91B, 0xB288544F, 0x2C32DC23, 0x9B2635E6 };
 
-    twofish::block_encryption(plaintext_initial, key, cipher);
+    twofish::encrypt_block(plaintext_initial, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(cipher[i] == cipher_test[i]);
     }
-    twofish::block_decryption(plaintext_final, key, cipher);
+    twofish::decrypt_block(plaintext_final, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(plaintext_initial[i] == plaintext_final[i]);
     }
@@ -497,11 +493,11 @@ TEST_CASE("I=4/pg67")
     uint32_t plaintext_final[4];
     uint32_t cipher[4];
     uint32_t cipher_test[4] = { 0x6CB4561C, 0x40BF0A97, 0x05931CB6, 0xD408E7FA };
-    twofish::block_encryption(plaintext_initial, key, cipher);
+    twofish::encrypt_block(plaintext_initial, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(cipher[i] == cipher_test[i]);
     }
-    twofish::block_decryption(plaintext_final, key, cipher);
+    twofish::decrypt_block(plaintext_final, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(plaintext_initial[i] == plaintext_final[i]);
     }
@@ -515,11 +511,11 @@ TEST_CASE("I=5/pg67")
     uint32_t cipher[4];
     uint32_t cipher_test[4] = { 0x3059D6D6, 0x1753B958, 0xD92F4781, 0xC8640E58 };
 
-    twofish::block_encryption(plaintext_initial, key, cipher);
+    twofish::encrypt_block(plaintext_initial, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(cipher[i] == cipher_test[i]);
     }
-    twofish::block_decryption(plaintext_final, key, cipher);
+    twofish::decrypt_block(plaintext_final, key, cipher);
     for (size_t i = 0; i < 4; ++i) {
         REQUIRE(plaintext_initial[i] == plaintext_final[i]);
     }
