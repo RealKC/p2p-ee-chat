@@ -4,7 +4,6 @@
 #include <array>
 #include <boost/random.hpp>
 #include <cstdint>
-#include <stdexcept>
 
 using namespace boost::multiprecision;
 using namespace boost::random;
@@ -53,7 +52,8 @@ PublicParams::PublicParams()
     import_bits(modulus, std::begin(rfc3526_modulus), std::end(rfc3526_modulus), 0, false);
 }
 
-static PublicParams public_params;
+
+static PublicParams public_params; // NOLINT(cert-err58-cpp)
 
 u2048 generate_private_key()
 {
