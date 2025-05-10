@@ -4,6 +4,8 @@
 #include <bitset>
 #include <cstdint>
 
+#include "common.hpp"
+
 using namespace std;
 
 #define ROR4(x) ((x >> 1) | ((x << 3) & 0xf))
@@ -410,3 +412,81 @@ int main()
 
     return 0;
 }
+
+#if IS_TESTING 
+
+TEST_CASE("correctly encrypts the plaintext")
+{
+    uint32_t key[8];
+    uint32_t plaintext_initial[4];
+    uint32_t plaintext_final[4];
+    uint32_t cipher[4];
+    uint32_t cipher_test[4];
+
+    //1
+    key[8] = {0x0};
+    plaintext_initial[4] = {0x0};
+    block_encryption(plaintext_initial, key, cipher);
+    cipher_test[] = {0x57FF739D, 0x4DC92C1B, 0xD7FC0170, 0x0CC8216F};
+    for(size_t i = 0; i < 4; ++i){
+        REQUIRE(cipher[i] == cipher_test[i]);
+    }
+    block_decryption(plaintext_final, Key, cipher);
+    for(size_t i = 0; i < 4; ++i){
+        REQUIRE(plaintext_initial[i] == plaintext_final[i]);
+    }
+
+    //2
+    key[8] = {0x0};
+    plaintext_initial[4] = {0x57FF739D, 0x4DC92C1B, 0xD7FC0170, 0x0CC8216F};
+    block_encryption(plaintext_initial, key, cipher);
+    cipher_test[4] = {0xD43BB755, 0x6EA32E46, 0xF2A282B7, 0xD45B4E0D};
+    for(size_t i = 0; i < 4; ++i){
+        REQUIRE(cipher[i] == cipher_test[i]);
+    }
+    block_decryption(plaintext_final, Key, cipher);
+    for(size_t i = 0; i < 4; ++i){
+        REQUIRE(plaintext_initial[i] == plaintext_final[i]);
+    }
+
+    //3
+    key[8] = {0x57FF739D, 0x4DC92C1B, 0xD7FC0170, 0x0CC8216F, 0x00000000, 0x00000000, 0x00000000, 0x00000000};
+    plaintext_initial[4] = {0xD43BB755, 0x6EA32E46, 0xF2A282B7, 0xD45B4E0D};
+    block_encryption(plaintext_initial, key, cipher);
+    cipher_test[4] = {0x90AFE91B, 0xB288544F, 0x2C32DC23, 0x9B2635E6};
+    for(size_t i = 0; i < 4; ++i){
+        REQUIRE(cipher[i] == cipher_test[i]);
+    }
+    block_decryption(plaintext_final, Key, cipher);
+    for(size_t i = 0; i < 4; ++i){
+        REQUIRE(plaintext_initial[i] == plaintext_final[i]);
+    }
+
+    //4
+    key[8] = {0xD43BB755, 0x6EA32E46, 0xF2A282B7, 0xD45B4E0D, 0x57FF739D, 0x4DC92C1B, 0xD7FC0170, 0x0CC8216F};
+    plaintext_initial[4] = {0x90AFE91B, 0xB288544F, 0x2C32DC23, 0x9B2635E6};
+    block_encryption(plaintext_initial, key, cipher);
+    cipher_test[4] = {0x6CB4561C, 0x40BF0A97, 0x05931CB6, 0xD408E7FA};
+    for(size_t i = 0; i < 4; ++i){
+        REQUIRE(cipher[i] == cipher_test[i]);
+    }
+    block_decryption(plaintext_final, Key, cipher);
+    for(size_t i = 0; i < 4; ++i){
+        REQUIRE(plaintext_initial[i] == plaintext_final[i]);
+    }
+
+    //5
+    key[8] = {0x90AFE91B, 0xB288544F, 0x2C32DC23, 0x9B2635E6, 0xD43BB755, 0x6EA32E46, 0xF2A282B7, 0xD45B4E0D};
+    plaintext_initial[4] = {0x6CB4561C, 0x40BF0A97, 0x05931CB6, 0xD408E7FA};
+    block_encryption(plaintext_initial, key, cipher);
+    cipher_test[4] = {0x3059D6D6, 0x1753B958, 0xD92F4781, 0xC8640E58};
+    for(size_t i = 0; i < 4; ++i){
+        REQUIRE(cipher[i] == cipher_test[i]);
+    }
+    block_decryption(plaintext_final, Key, cipher);
+    for(size_t i = 0; i < 4; ++i){
+        REQUIRE(plaintext_initial[i] == plaintext_final[i]);
+    }
+}
+
+#endif
