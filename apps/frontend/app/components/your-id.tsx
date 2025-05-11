@@ -1,4 +1,4 @@
-import { useP2P } from "~/p2p";
+import { useP2P } from "~/p2p.client";
 
 export default function YourId() {
   const { userId } = useP2P();

@@ -1,6 +1,6 @@
 import { Link } from "@remix-run/react";
 import { HOME } from "~/chats";
-import { useP2P } from "~/p2p";
+import { useP2P } from "~/p2p.client";
 import ChatLink from "./chat-link";
 
 export default function ChatsSidebar() {

@@ -1,5 +1,5 @@
 import { type SubmitHandler, useForm } from "react-hook-form";
-import { useP2P } from "./p2p";
+import { useP2P } from "./p2p.client";
 
 type Inputs = {
   chatId: string;

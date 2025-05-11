@@ -5,7 +5,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(crypto-lib
     common.hpp
-    demo.cpp
+    lib.cpp
     KeyExchange.cpp
     KeyExchange.hpp
     twofish.cpp

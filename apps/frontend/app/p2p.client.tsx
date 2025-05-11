@@ -1,3 +1,4 @@
+import { CryptoU8Vec, DHKey, EncryptionKey } from "@csd/crypto";
 import { Await, useAsyncValue } from "@remix-run/react";
 import React, {
   type PropsWithChildren,
@@ -8,6 +9,7 @@ import React, {
 import { useState } from "react";
 import useWebSocket, { type SendMessage } from "react-use-websocket";
 import { z } from "zod";
+import { type crypto, decryptMessage, encryptMessage } from "./crypto.client";
 
 const ClientMessageTypes = ["offer", "answer", "ice-candidate"] as const;
 
@@ -24,7 +26,14 @@ const SignalMessage = z.object({
 type SetState<S> = React.Dispatch<React.SetStateAction<S>>;
 
 type ConnectionsMap = Map<string, RTCPeerConnection>;
-type DataChannels = Map<string, RTCDataChannel>;
+
+type P2PChannel = {
+  channel: RTCDataChannel;
+  state: "negotiating" | "negotiated";
+  secret: crypto.DHKey;
+  key?: crypto.EncryptionKey;
+};
+type DataChannels = Map<string, P2PChannel>;
 
 export type ChatMessage = {
   sender: "you" | "they";
@@ -58,6 +67,64 @@ type P2PContextData = {
 
 const P2PContext = React.createContext<P2PContextData | null>(null);
 
+function assignDataChannelEventHandlers(
+  dataChannel: RTCDataChannel,
+  peerId: string,
+  chats: { map: Map<string, ChatMessage[]> },
+  dataChannels: { map: DataChannels },
+  setChats: SetState<{ map: Map<string, ChatMessage[]> }>,
+  secret: crypto.DHKey,
+) {
+  dataChannel.onmessage = (event) => {
+    console.log(`data channel message ${event.data}`);
+
+    const channel = dataChannels.map.get(peerId);
+    if (!channel) {
+      console.log(`received message for ${peerId} but the channel is dead`);
+      return;
+    }
+
+    const message = new Uint8Array(event.data);
+
+    if (channel.state === "negotiating") {
+      const vec = new CryptoU8Vec();
+      for (const byte of message) {
+        vec.push_back(byte);
+      }
+      const theirs = DHKey.fromBytes(vec);
+
+      channel.key = EncryptionKey.fromDiffieHellman(channel.secret, theirs);
+      channel.state = "negotiated";
+      console.log("finsihed negotiating key");
+      return;
+    }
+
+    const key = channel.key!;
+
+    const decrypted = decryptMessage(key, message);
+
+    console.log(`decrypted result is "${decrypted}"`);
+
+    const log = chats.map.get(peerId);
+    if (log) {
+      log.push({ message: decrypted, sender: "they" });
+    } else {
+      chats.map.set(peerId, [{ message: decrypted, sender: "they" }]);
+    }
+
+    setChats({ map: chats.map });
+  };
+
+  dataChannel.onopen = (event) => {
+    console.log("send my key");
+
+    const peer = dataChannels.map.get(peerId);
+
+    return dataChannel.send(secret.computePublic().bytes());
+  };
+  dataChannel.onclose = () => console.log("data channel closed");
+}
+
 export function useP2P() {
   const {
     state: { userId, username, connections, dataChannels, chats },
@@ -66,6 +133,7 @@ export function useP2P() {
       createConnection,
       setUsername,
       setDataChannels,
+      setChats,
     },
   } = useContext(P2PContext)!;
 
@@ -79,14 +147,25 @@ export function useP2P() {
           ordered: true,
         },
       );
-      function onDataChannelStatusChange(_event: Event) {
-        console.log(`status change: ${dataChannel!.readyState}`);
-      }
-      dataChannel.onopen = onDataChannelStatusChange;
-      dataChannel.onclose = onDataChannelStatusChange;
+
+      const secret = DHKey.makePrivate();
+
       setDataChannels((prev) => ({
-        map: prev.map.set(peerId, dataChannel!),
+        map: prev.map.set(peerId, {
+          channel: dataChannel!,
+          secret,
+          state: "negotiating",
+        }),
       }));
+
+      assignDataChannelEventHandlers(
+        dataChannel,
+        peerId,
+        chats,
+        dataChannels,
+        setChats,
+        secret,
+      );
 
       const offer = await connection.createOffer();
       connection.setLocalDescription(offer);
@@ -103,16 +182,24 @@ export function useP2P() {
       return;
     }
 
-    const dataChannel = dataChannels.map.get(peerId);
+    const channel = dataChannels.map.get(peerId);
 
-    if (!dataChannel) {
+    if (!channel) {
       console.error(`No connection for ${peerId}`);
       return;
     }
 
-    console.log(`${dataChannel.readyState}`);
+    console.log(`${channel.channel.readyState}`);
 
-    dataChannel.send(message);
+    channel.channel.send(
+      encryptMessage(
+        EncryptionKey.fromDiffieHellman(
+          DHKey.makePrivate(),
+          DHKey.makePrivate(),
+        ),
+        message,
+      ),
+    );
   }
 
   return {
@@ -149,7 +236,7 @@ export function P2PProvider(props: PropsWithChildren) {
     });
 
     const [dataChannels, setDataChannels] = useState({
-      map: new Map<string, RTCDataChannel>(),
+      map: new Map<string, P2PChannel>(),
     });
 
     const [chats, setChats] = useState({
@@ -221,26 +308,23 @@ export function P2PProvider(props: PropsWithChildren) {
             console.log("new data channel");
             console.log(event);
             const dataChannel = event.channel;
+            const secret = DHKey.makePrivate();
             setDataChannels((prev) => ({
-              map: prev.map.set(message.userId, dataChannel),
+              map: prev.map.set(message.userId, {
+                channel: dataChannel,
+                secret,
+                state: "negotiating",
+              }),
             }));
 
-            dataChannel.onmessage = (event) => {
-              console.log(`data channel message ${event.data}`);
-
-              const decrypted = event.data;
-
-              const log = chats.map.get(message.userId);
-              if (log) {
-                log.push(decrypted);
-              } else {
-                chats.map.set(message.userId, [
-                  { message: decrypted, sender: "they" },
-                ]);
-              }
-
-              setChats({ map: chats.map });
-            };
+            assignDataChannelEventHandlers(
+              dataChannel,
+              message.userId,
+              chats,
+              dataChannels,
+              setChats,
+              secret,
+            );
           };
 
           console.log("have remote offer");

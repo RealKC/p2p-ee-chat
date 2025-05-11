@@ -1,7 +1,11 @@
 import CryptoLib from "./build-wasm/crypto-lib";
 
-const cryptoLib = await CryptoLib();
+export * as crypto from "./build-wasm/crypto-lib";
 
-export function add(a: number, b: number) {
-  return cryptoLib.add(a, b);
-}
+export const {
+  CryptoU8Vec,
+  encryptMessage,
+  decryptMessage,
+  DHKey,
+  EncryptionKey,
+} = await CryptoLib();
