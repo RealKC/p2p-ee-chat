@@ -26,6 +26,11 @@ type SetState<S> = React.Dispatch<React.SetStateAction<S>>;
 type ConnectionsMap = Map<string, RTCPeerConnection>;
 type DataChannels = Map<string, RTCDataChannel>;
 
+export type ChatMessage = {
+  sender: "you" | "they";
+  message: string;
+};
+
 type P2PContextData = {
   iceServers: RTCIceServer[];
   state: {
@@ -33,6 +38,7 @@ type P2PContextData = {
     username?: string;
     connections: { map: ConnectionsMap };
     dataChannels: { map: DataChannels };
+    chats: { map: Map<string, ChatMessage[]> };
   };
   actions: {
     sendToSignalingServer: (
@@ -46,6 +52,7 @@ type P2PContextData = {
     setConnections: SetState<{ map: ConnectionsMap }>;
     setDataChannels: SetState<{ map: DataChannels }>;
     sendWSMessage: SendMessage;
+    setChats: SetState<{ map: Map<string, ChatMessage[]> }>;
   };
 };
 
@@ -53,7 +60,7 @@ const P2PContext = React.createContext<P2PContextData | null>(null);
 
 export function useP2P() {
   const {
-    state: { userId, username, connections, dataChannels },
+    state: { userId, username, connections, dataChannels, chats },
     actions: {
       sendToSignalingServer,
       createConnection,
@@ -115,6 +122,7 @@ export function useP2P() {
     userId,
     sendChatMessage,
     connections,
+    chats,
   };
 }
 
@@ -142,6 +150,10 @@ export function P2PProvider(props: PropsWithChildren) {
 
     const [dataChannels, setDataChannels] = useState({
       map: new Map<string, RTCDataChannel>(),
+    });
+
+    const [chats, setChats] = useState({
+      map: new Map<string, ChatMessage[]>(),
     });
 
     const createConnection = (peerId: string) => {
@@ -215,6 +227,19 @@ export function P2PProvider(props: PropsWithChildren) {
 
             dataChannel.onmessage = (event) => {
               console.log(`data channel message ${event.data}`);
+
+              const decrypted = event.data;
+
+              const log = chats.map.get(message.userId);
+              if (log) {
+                log.push(decrypted);
+              } else {
+                chats.map.set(message.userId, [
+                  { message: decrypted, sender: "they" },
+                ]);
+              }
+
+              setChats({ map: chats.map });
             };
           };
 
@@ -272,7 +297,7 @@ export function P2PProvider(props: PropsWithChildren) {
 
     const p2p = {
       iceServers,
-      state: { userId, username, connections, dataChannels },
+      state: { userId, username, connections, dataChannels, chats },
       actions: {
         sendWSMessage: sendMessage,
         setUserId,
@@ -281,6 +306,7 @@ export function P2PProvider(props: PropsWithChildren) {
         setDataChannels,
         sendToSignalingServer,
         createConnection,
+        setChats,
       },
     };
 
