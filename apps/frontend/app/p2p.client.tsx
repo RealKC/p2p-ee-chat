@@ -289,8 +289,10 @@ export function useP2P() {
 }
 
 export function P2PProvider(props: PropsWithChildren) {
+  const signalingServerAddress = "192.168.11.94:8080"
+
   const fetchIceServers = async () => {
-    const response = await fetch("http://localhost:8080/ice", {
+    const response = await fetch(`http://${signalingServerAddress}/ice`, {
       method: "GET",
     });
 
@@ -300,7 +302,7 @@ export function P2PProvider(props: PropsWithChildren) {
   function InnerElemens() {
     const iceServers = useAsyncValue() as RTCIceServer[];
 
-    const { sendMessage, lastMessage } = useWebSocket("ws://localhost:8080/ws");
+    const { sendMessage, lastMessage } = useWebSocket(`ws://${signalingServerAddress}/ws`);
 
     const [userId, setUserId] = useState<string | undefined>();
 
