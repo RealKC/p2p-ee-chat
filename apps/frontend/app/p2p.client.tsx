@@ -30,7 +30,6 @@ type ConnectionsMap = Map<string, RTCPeerConnection>;
 type P2PChannel = {
   channel: RTCDataChannel;
   state: "negotiating" | "negotiated";
-  secret: crypto.DHKey;
   key?: crypto.EncryptionKey;
 };
 type DataChannels = Map<string, P2PChannel>;
@@ -93,7 +92,7 @@ function assignDataChannelEventHandlers(
       }
       const theirs = DHKey.fromBytes(vec);
 
-      channel.key = EncryptionKey.fromDiffieHellman(channel.secret, theirs);
+      channel.key = EncryptionKey.fromDiffieHellman(secret, theirs);
       channel.state = "negotiated";
       console.log("finsihed negotiating key");
       return;
@@ -148,12 +147,9 @@ export function useP2P() {
         },
       );
 
-      const secret = DHKey.makePrivate();
-
       setDataChannels((prev) => ({
         map: prev.map.set(peerId, {
           channel: dataChannel!,
-          secret,
           state: "negotiating",
         }),
       }));
@@ -164,7 +160,7 @@ export function useP2P() {
         chats,
         dataChannels,
         setChats,
-        secret,
+        DHKey.makePrivate(),
       );
 
       const offer = await connection.createOffer();
@@ -193,10 +189,7 @@ export function useP2P() {
 
     channel.channel.send(
       encryptMessage(
-        EncryptionKey.fromDiffieHellman(
-          DHKey.makePrivate(),
-          DHKey.makePrivate(),
-        ),
+        channel.key!,
         message,
       ),
     );
@@ -308,11 +301,9 @@ export function P2PProvider(props: PropsWithChildren) {
             console.log("new data channel");
             console.log(event);
             const dataChannel = event.channel;
-            const secret = DHKey.makePrivate();
             setDataChannels((prev) => ({
               map: prev.map.set(message.userId, {
                 channel: dataChannel,
-                secret,
                 state: "negotiating",
               }),
             }));
@@ -323,7 +314,7 @@ export function P2PProvider(props: PropsWithChildren) {
               chats,
               dataChannels,
               setChats,
-              secret,
+              DHKey.makePrivate(),
             );
           };
 

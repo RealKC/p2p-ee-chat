@@ -53,16 +53,6 @@ struct EncryptionKey {
 
     static EncryptionKey from_dh(DHKey const& mine, DHKey const& theirs)
     {
-        std::cout << "mine: " << std::hex;
-        for (auto k : mine.as_bytes)
-            std::cout << (std::uint32_t)k;
-        std::cout << std::hex << std::endl;
-
-        std::cout << "theirs: " << std::hex;
-        for (auto k : theirs.as_bytes)
-            std::cout << (std::uint32_t)k;
-        std::cout << std::hex << std::endl;
-
         using namespace boost::multiprecision;
 
         auto common = compute_common_secret(theirs.key, mine.key);
