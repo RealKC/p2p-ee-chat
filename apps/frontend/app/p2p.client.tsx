@@ -185,7 +185,14 @@ export function useP2P() {
       return;
     }
 
-    console.log(`${channel.channel.readyState}`);
+    const log = chats.map.get(peerId);
+    if (log) {
+      log.push({ message, sender: "you" });
+    } else {
+      chats.map.set(peerId, [{ message, sender: "you" }]);
+    }
+
+    setChats({ map: chats.map });
 
     channel.channel.send(
       encryptMessage(
