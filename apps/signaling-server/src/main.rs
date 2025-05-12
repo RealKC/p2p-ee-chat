@@ -8,7 +8,7 @@ use axum::{
     http::{HeaderValue, Method},
     routing::{any, get},
 };
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{CorsLayer, Any};
 use ws::Channels;
 
 #[tokio::main]
@@ -17,7 +17,7 @@ async fn main() {
 
     let addr = env::args()
         .nth(1)
-        .unwrap_or_else(|| "127.0.0.1:8080".to_string());
+        .unwrap_or_else(|| "0.0.0.0:8080".to_string());
 
     let state = Arc::new(Channels::new());
 
@@ -26,8 +26,8 @@ async fn main() {
         .route("/ice", get(ice::get))
         .layer(
             CorsLayer::new()
-                .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
-                .allow_methods([Method::GET]),
+                .allow_origin(Any)
+                .allow_methods([Method::GET, Method::POST]),
         )
         .with_state(state);
 
