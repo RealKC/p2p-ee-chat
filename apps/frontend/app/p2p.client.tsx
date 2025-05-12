@@ -11,7 +11,7 @@ import useWebSocket, { type SendMessage } from "react-use-websocket";
 import { z } from "zod";
 import { type crypto, decryptMessage, encryptMessage } from "./crypto.client";
 import { bytesToBase64DataUrl, dataUrlToBytes } from "~/base64";
-import {Mutex} from "async-mutex";
+import { Mutex } from "async-mutex";
 
 const ClientMessageTypes = ["offer", "answer", "ice-candidate"] as const;
 
@@ -43,7 +43,7 @@ export type ChatMessage = {
 
 type P2PContextData = {
   iceServers: RTCIceServer[];
-  mutex: Mutex,
+  mutex: Mutex;
   state: {
     userId?: string;
     username?: string;
@@ -139,7 +139,7 @@ function assignDataChannelEventHandlers(
       } else {
         inProgressForPeer.set(desered.id, newArray);
         inProgressMessages.map.set(peerId, inProgressForPeer);
-        console.log(`set ${peerId} with ${desered.id}`)
+        console.log(`set ${peerId} with ${desered.id}`);
       }
 
       console.log("not end: ", inProgressMessages);
@@ -147,7 +147,7 @@ function assignDataChannelEventHandlers(
       return;
     }
 
-    console.log("end: ", inProgressMessages)
+    console.log("end: ", inProgressMessages);
     const message = inProgressMessages.map.get(peerId)!.get(desered.id)!;
 
     const key = channel.key!;
@@ -168,7 +168,7 @@ function assignDataChannelEventHandlers(
   };
 
   dataChannel.onmessage = async (event) => {
-    await mutex.runExclusive(async () => await handleOnMessage(event))
+    await mutex.runExclusive(async () => await handleOnMessage(event));
   };
 
   dataChannel.onopen = (event) => {
@@ -183,7 +183,14 @@ function assignDataChannelEventHandlers(
 
 export function useP2P() {
   const {
-    state: { userId, username, connections, dataChannels, chats, inProgressMessages },
+    state: {
+      userId,
+      username,
+      connections,
+      dataChannels,
+      chats,
+      inProgressMessages,
+    },
     actions: {
       sendToSignalingServer,
       createConnection,
@@ -390,7 +397,6 @@ export function P2PProvider(props: PropsWithChildren) {
             }));
 
             assignDataChannelEventHandlers(
-
               dataChannel,
               message.userId,
               chats,
