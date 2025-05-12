@@ -1,5 +1,6 @@
 import { CryptoU8Vec, DHKey, EncryptionKey } from "@csd/crypto";
 import { Await, useAsyncValue } from "@remix-run/react";
+import { Mutex } from "async-mutex";
 import React, {
   type PropsWithChildren,
   Suspense,
@@ -9,9 +10,8 @@ import React, {
 import { useState } from "react";
 import useWebSocket, { type SendMessage } from "react-use-websocket";
 import { z } from "zod";
-import { type crypto, decryptMessage, encryptMessage } from "./crypto.client";
 import { bytesToBase64DataUrl, dataUrlToBytes } from "~/base64";
-import { Mutex } from "async-mutex";
+import { type crypto, decryptMessage, encryptMessage } from "./crypto.client";
 
 const ClientMessageTypes = ["offer", "answer", "ice-candidate"] as const;
 
