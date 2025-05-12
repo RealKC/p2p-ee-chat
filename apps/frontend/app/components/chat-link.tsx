@@ -15,7 +15,7 @@ export default function ChatLink({ chat }: ChatLinkProps & PropsWithChildren) {
   }
 
   return (
-    <button onClick={onClick} type="button">
+    <button onClick={onClick} type="button" className="block">
       {chat}
     </button>
   );
