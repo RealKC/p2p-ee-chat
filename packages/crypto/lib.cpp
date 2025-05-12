@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstring>
 
+#if IS_WASM
 static constexpr auto BLOCK_SIZE = 16;
 
 struct DHKey {
@@ -162,7 +163,6 @@ static std::string decrypt_message(EncryptionKey key, std::vector<std::uint8_t> 
     return decrypted;
 }
 
-#if IS_WASM
 EMSCRIPTEN_BINDINGS(CryptLib)
 {
     using namespace emscripten;
