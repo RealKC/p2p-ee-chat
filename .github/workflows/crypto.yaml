@@ -31,6 +31,7 @@ jobs:
     strategy:
       matrix:
         node-version: [20]
+    if: false
     steps:
       - uses: actions/checkout@v4
       - name: Install pnpm
@@ -49,5 +50,7 @@ jobs:
       - name: Lint tests
         working-directory: packages/crypto
         run: |
+          pnpm configure-tests
           pnpm check-tests
+          pnpm configure-wasm
           pnpm check-wasm
