@@ -10,6 +10,8 @@ import { useState } from "react";
 import useWebSocket, { type SendMessage } from "react-use-websocket";
 import { z } from "zod";
 import { type crypto, decryptMessage, encryptMessage } from "./crypto.client";
+import { bytesToBase64DataUrl, dataUrlToBytes } from "~/base64";
+import {Mutex} from "async-mutex";
 
 const ClientMessageTypes = ["offer", "answer", "ice-candidate"] as const;
 
@@ -41,12 +43,14 @@ export type ChatMessage = {
 
 type P2PContextData = {
   iceServers: RTCIceServer[];
+  mutex: Mutex,
   state: {
     userId?: string;
     username?: string;
     connections: { map: ConnectionsMap };
     dataChannels: { map: DataChannels };
     chats: { map: Map<string, ChatMessage[]> };
+    inProgressMessages: { map: Map<string, Map<number, Uint8Array>> };
   };
   actions: {
     sendToSignalingServer: (
@@ -61,6 +65,9 @@ type P2PContextData = {
     setDataChannels: SetState<{ map: DataChannels }>;
     sendWSMessage: SendMessage;
     setChats: SetState<{ map: Map<string, ChatMessage[]> }>;
+    setInProgressMessages: SetState<{
+      map: Map<string, Map<number, Uint8Array>>;
+    }>;
   };
 };
 
@@ -73,8 +80,18 @@ function assignDataChannelEventHandlers(
   dataChannels: { map: DataChannels },
   setChats: SetState<{ map: Map<string, ChatMessage[]> }>,
   secret: crypto.DHKey,
+  inProgressMessages: { map: Map<string, Map<number, Uint8Array>> },
+  mutex: Mutex,
 ) {
-  dataChannel.onmessage = (event) => {
+  const inProgress = new Map<number, Uint8Array>();
+
+  type ChunkedMessage = {
+    id: number;
+    end: boolean;
+    chunk?: string;
+  };
+
+  const handleOnMessage = async (event: MessageEvent) => {
     console.log(`data channel message ${event.data}`);
 
     const channel = dataChannels.map.get(peerId);
@@ -83,9 +100,8 @@ function assignDataChannelEventHandlers(
       return;
     }
 
-    const message = new Uint8Array(event.data);
-
     if (channel.state === "negotiating") {
+      const message = new Uint8Array(event.data);
       const vec = new CryptoU8Vec();
       for (const byte of message) {
         vec.push_back(byte);
@@ -98,8 +114,45 @@ function assignDataChannelEventHandlers(
       return;
     }
 
+    const desered: ChunkedMessage = JSON.parse(event.data);
+
+    console.log(`received ${desered.id}`);
+
+    if (!desered.end) {
+      const newChunk = await dataUrlToBytes(desered.chunk!)!;
+      const inProgressForPeer = inProgressMessages.map.get(peerId);
+      const currentChunk = inProgressForPeer?.get(desered.id);
+
+      const newArray = new Uint8Array(
+        newChunk.length + (currentChunk?.length ?? 0),
+      );
+
+      if (currentChunk) {
+        newArray.set(currentChunk, 0);
+      }
+      newArray.set(newChunk, currentChunk?.length ?? 0);
+
+      if (!inProgressForPeer) {
+        const forPeer = new Map<number, Uint8Array>();
+        forPeer.set(desered.id, newArray);
+        inProgressMessages.map.set(peerId, forPeer);
+      } else {
+        inProgressForPeer.set(desered.id, newArray);
+        inProgressMessages.map.set(peerId, inProgressForPeer);
+        console.log(`set ${peerId} with ${desered.id}`)
+      }
+
+      console.log("not end: ", inProgressMessages);
+
+      return;
+    }
+
+    console.log("end: ", inProgressMessages)
+    const message = inProgressMessages.map.get(peerId)!.get(desered.id)!;
+
     const key = channel.key!;
 
+    console.log(typeof message);
     const decrypted = decryptMessage(key, message);
 
     console.log(`decrypted result is "${decrypted}"`);
@@ -114,6 +167,10 @@ function assignDataChannelEventHandlers(
     setChats({ map: chats.map });
   };
 
+  dataChannel.onmessage = async (event) => {
+    await mutex.runExclusive(async () => await handleOnMessage(event))
+  };
+
   dataChannel.onopen = (event) => {
     console.log("send my key");
 
@@ -126,7 +183,7 @@ function assignDataChannelEventHandlers(
 
 export function useP2P() {
   const {
-    state: { userId, username, connections, dataChannels, chats },
+    state: { userId, username, connections, dataChannels, chats, inProgressMessages },
     actions: {
       sendToSignalingServer,
       createConnection,
@@ -134,6 +191,7 @@ export function useP2P() {
       setDataChannels,
       setChats,
     },
+    mutex,
   } = useContext(P2PContext)!;
 
   async function connectToPeer(peerId: string) {
@@ -161,6 +219,8 @@ export function useP2P() {
         dataChannels,
         setChats,
         DHKey.makePrivate(),
+        inProgressMessages,
+        mutex,
       );
 
       const offer = await connection.createOffer();
@@ -172,7 +232,7 @@ export function useP2P() {
     }
   }
 
-  function sendChatMessage(peerId: string, message: string) {
+  async function sendChatMessage(peerId: string, message: string) {
     const connection = connections.map.get(peerId);
     if (!connection) {
       return;
@@ -194,12 +254,20 @@ export function useP2P() {
 
     setChats({ map: chats.map });
 
-    channel.channel.send(
-      encryptMessage(
-        channel.key!,
-        message,
-      ),
-    );
+    const encrypted = encryptMessage(channel.key!, message);
+
+    let index = 0;
+    const id = Date.now();
+
+    while (index < encrypted.length) {
+      const chunk = await bytesToBase64DataUrl(
+        new Uint8Array(encrypted, index, 256),
+      );
+      console.log("chunk:", chunk);
+      channel.channel.send(JSON.stringify({ id, chunk, end: false }));
+      index += 256;
+    }
+    channel.channel.send(JSON.stringify({ id, end: true }));
   }
 
   return {
@@ -242,6 +310,12 @@ export function P2PProvider(props: PropsWithChildren) {
     const [chats, setChats] = useState({
       map: new Map<string, ChatMessage[]>(),
     });
+
+    const [inProgressMessages, setInProgressMessages] = useState({
+      map: new Map<string, Map<number, Uint8Array>>(),
+    });
+
+    const mutex = new Mutex();
 
     const createConnection = (peerId: string) => {
       const connection = new RTCPeerConnection({ iceServers });
@@ -316,12 +390,15 @@ export function P2PProvider(props: PropsWithChildren) {
             }));
 
             assignDataChannelEventHandlers(
+
               dataChannel,
               message.userId,
               chats,
               dataChannels,
               setChats,
               DHKey.makePrivate(),
+              inProgressMessages,
+              mutex,
             );
           };
 
@@ -379,7 +456,15 @@ export function P2PProvider(props: PropsWithChildren) {
 
     const p2p = {
       iceServers,
-      state: { userId, username, connections, dataChannels, chats },
+      mutex,
+      state: {
+        userId,
+        username,
+        connections,
+        dataChannels,
+        chats,
+        inProgressMessages,
+      },
       actions: {
         sendWSMessage: sendMessage,
         setUserId,
@@ -389,6 +474,7 @@ export function P2PProvider(props: PropsWithChildren) {
         sendToSignalingServer,
         createConnection,
         setChats,
+        setInProgressMessages,
       },
     };
 
